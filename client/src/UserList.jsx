@@ -3,11 +3,12 @@ import axios from 'axios';
 import { CSVLink } from 'react-csv';
 import toast from 'react-hot-toast';
 
-// Vercel-এর জন্য ডায়নামিক URL
+// Vercel-এর জন্য ডায়নামিক URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ name: '', role: 'User' });
@@ -17,6 +18,7 @@ const UserList = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/api/users?page=${page}&limit=5`);
       
@@ -30,6 +32,8 @@ const UserList = () => {
     } catch (error) {
       toast.error("Error fetching users data!");
       console.error("Error fetching data: ", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -116,79 +120,95 @@ const UserList = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-slate-300">
-          <thead className="text-xs text-slate-400 uppercase bg-slate-900/50 border-b border-slate-700">
-            <tr>
-              <th className="py-3 px-4">Name</th>
-              <th className="py-3 px-4">Email</th>
-              <th className="py-3 px-4">Role</th>
-              <th className="py-3 px-4">Joined Date</th>
-              <th className="py-3 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-700/50">
-            {filteredUsers.map((user) => (
-              <tr key={user._id} className="hover:bg-slate-700/30 transition-colors">
-                <td className="py-3.5 px-4 font-medium text-white">
-                  {editingId === user._id ? (
-                    <input
-                      type="text"
-                      value={editFormData.name}
-                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                      className="bg-slate-900 border border-slate-600 px-3 py-1 rounded-lg text-white focus:outline-none focus:border-indigo-500 text-sm"
-                    />
-                  ) : (
-                    user.name
-                  )}
-                </td>
-                <td className="py-3.5 px-4 text-slate-400">{user.email}</td>
-                <td className="py-3.5 px-4">
-                  {editingId === user._id ? (
-                    <select
-                      value={editFormData.role}
-                      onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                      className="bg-slate-900 border border-slate-600 px-3 py-1 rounded-lg text-white focus:outline-none focus:border-indigo-500 text-sm"
-                    >
-                      <option value="User">User</option>
-                      <option value="Manager">Manager</option>
-                      <option value="Admin">Admin</option>
-                    </select>
-                  ) : (
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getRoleBadge(user.role)}`}>
-                      {user.role}
-                    </span>
-                  )}
-                </td>
-                <td className="py-3.5 px-4 text-slate-400">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-                <td className="py-3.5 px-4 text-right space-x-2">
-                  {editingId === user._id ? (
-                    <button 
-                      onClick={() => handleSaveUpdate(user._id)}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm"
-                    >
-                      Save
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleEditClick(user)}
-                      className="bg-slate-700 hover:bg-slate-600 text-indigo-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => handleDelete(user._id)}
-                    className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
+        {loading ? (
+          /* Table Skeleton Loader */
+          <div className="animate-pulse space-y-4">
+            <div className="h-10 bg-slate-900/60 rounded-lg w-full" />
+            {[1, 2, 3, 4, 5].map((n) => (
+              <div key={n} className="flex justify-between items-center py-3 px-4 bg-slate-900/30 rounded-lg">
+                <div className="h-4 w-32 bg-slate-700/60 rounded" />
+                <div className="h-4 w-44 bg-slate-700/40 rounded" />
+                <div className="h-6 w-16 bg-slate-700/50 rounded-full" />
+                <div className="h-4 w-24 bg-slate-700/40 rounded" />
+                <div className="h-8 w-28 bg-slate-700/60 rounded-lg" />
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        ) : (
+          <table className="w-full text-left text-sm text-slate-300">
+            <thead className="text-xs text-slate-400 uppercase bg-slate-900/50 border-b border-slate-700">
+              <tr>
+                <th className="py-3 px-4">Name</th>
+                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Role</th>
+                <th className="py-3 px-4">Joined Date</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-700/50">
+              {filteredUsers.map((user) => (
+                <tr key={user._id} className="hover:bg-slate-700/30 transition-colors">
+                  <td className="py-3.5 px-4 font-medium text-white">
+                    {editingId === user._id ? (
+                      <input
+                        type="text"
+                        value={editFormData.name}
+                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                        className="bg-slate-900 border border-slate-600 px-3 py-1 rounded-lg text-white focus:outline-none focus:border-indigo-500 text-sm"
+                      />
+                    ) : (
+                      user.name
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-400">{user.email}</td>
+                  <td className="py-3.5 px-4">
+                    {editingId === user._id ? (
+                      <select
+                        value={editFormData.role}
+                        onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                        className="bg-slate-900 border border-slate-600 px-3 py-1 rounded-lg text-white focus:outline-none focus:border-indigo-500 text-sm"
+                      >
+                        <option value="User">User</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Admin">Admin</option>
+                      </select>
+                    ) : (
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getRoleBadge(user.role)}`}>
+                        {user.role}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-400">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="py-3.5 px-4 text-right space-x-2">
+                    {editingId === user._id ? (
+                      <button 
+                        onClick={() => handleSaveUpdate(user._id)}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm"
+                      >
+                        Save
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleEditClick(user)}
+                        className="bg-slate-700 hover:bg-slate-600 text-indigo-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleDelete(user._id)}
+                      className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Pagination Controls */}
