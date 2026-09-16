@@ -1,23 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
-// Inline Login Component
-function InlineLogin() {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
+    // সাময়িকভাবে একটি ডামি টোকেন দিয়ে লগইন সফল করা হচ্ছে
     if (email && password) {
-      localStorage.setItem('token', 'demo-jwt-token-nexus');
-      window.location.reload();
+      localStorage.setItem('token', 'authenticated-nexus-token');
+      window.location.reload(); // পেজ রিফ্রেশ হলে ProtectedRoute সরাসরি ড্যাশবোর্ড দেখাবে
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-100 p-4">
-      <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
+      <div className="bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700 w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-2 text-white">NexusAdmin</h2>
-        <p className="text-sm text-slate-400 text-center mb-6">Enter your credentials to access the dashboard</p>
+        <p className="text-sm text-slate-400 text-center mb-6">Enter credentials to access the control center</p>
         
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
@@ -52,31 +52,4 @@ function InlineLogin() {
       </div>
     </div>
   );
-}
-
-export default function ProtectedRoute({ children }) {
-  const [token, setToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const currentToken = localStorage.getItem('token');
-    setToken(currentToken);
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-        <p className="text-sm opacity-70">Checking authentication...</p>
-      </div>
-    );
-  }
-
-  // টোকেন না থাকলে সরাসরি InlineLogin দেখাবে
-  if (!token) {
-    return <InlineLogin />;
-  }
-
-  // টোকেন থাকলে মূল ড্যাশবোর্ড দেখাবে
-  return children;
 }
