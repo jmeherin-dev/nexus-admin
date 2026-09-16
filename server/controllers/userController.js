@@ -1,12 +1,30 @@
 import User from "../models/User.js";
 
-// @desc    সব ইউজারদের তথ্য দেখা (Get all users)
+// @desc    সব ইউজারদের তথ্য দেখা (Get all users with Pagination)
 // @route   GET /api/users
 export const getUsers = async (req, res) => {
   try {
-    // ডাটাবেজ থেকে সব ইউজার খুঁজবে, কিন্তু সিকিউরিটির জন্য পাসওয়ার্ড দেখাবে না
-    const users = await User.find().select("-password"); 
-    res.status(200).json(users);
+    // URLQuery থেকে page এবং limit ধরবে (ডিফল্ট: page 1, limit 5)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    // মোট ইউজারের সংখ্যা গণনা
+    const totalUsers = await User.countDocuments();
+
+    // পেজিনেশন অনুযায়ী ডাটাবেজ থেকে ইউজার নিয়ে আসবে
+    const users = await User.find()
+      .select("-password")
+      .skip(skip)
+      .limit(limit);
+
+    // ফ্রন্টএন্ডের জন্য ডাটা এবং পেজিনেশন ইনফো একসাথে রেসপন্স করবে
+    res.status(200).json({
+      users,
+      currentPage: page,
+      totalPages: Math.ceil(totalUsers / limit),
+      totalUsers,
+    });
   } catch (error) {
     res.status(500).json({ message: "Error fetching users", error: error.message });
   }
@@ -18,12 +36,10 @@ export const createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // চেক করা হচ্ছে সব তথ্য দেওয়া হয়েছে কি না
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Please provide all required fields" });
     }
 
-    // নতুন ইউজার তৈরি ও ডাটাবেজে সেভ করা
     const newUser = new User({ name, email, password, role });
     await newUser.save();
 
@@ -32,6 +48,7 @@ export const createUser = async (req, res) => {
     res.status(500).json({ message: "Error creating user", error: error.message });
   }
 };
+
 // @desc    ইউজার মুছে ফেলা (Delete user)
 // @route   DELETE /api/users/:id
 export const deleteUser = async (req, res) => {
@@ -43,6 +60,7 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: "Error deleting user", error: error.message });
   }
 };
+
 // @desc    ইউজার আপডেট করা (Update user)
 // @route   PUT /api/users/:id
 export const updateUser = async (req, res) => {
@@ -53,7 +71,7 @@ export const updateUser = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { name, role },
-      { new: true } // আপডেট করা নতুন ডাটা রিটার্ন করবে
+      { new: true }
     ).select("-password");
 
     res.status(200).json(updatedUser);

@@ -6,15 +6,23 @@ import UserList from './UserList';
 import AddUserForm from './AddUserForm';
 import AnalyticsChart from './components/AnalyticsChart';
 
+// Environment variable অথবা fallback হিসেবে localhost ব্যবহার করবে
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [userCount, setUserCount] = useState(0);
 
-  // ডাটাবেজ থেকে ইউজারের সংখ্যা নিয়ে আসা
+  // ডাটাবেজ থেকে ইউজারের মোট সংখ্যা নিয়ে আসা
   const fetchUserCount = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/users');
-      setUserCount(response.data.length);
+      const response = await axios.get(`${API_BASE_URL}/api/users`);
+      // ব্যাকএন্ড থেকে আসা totalUsers বা users.length হ্যান্ডেল করবে
+      const count = response.data.totalUsers !== undefined 
+        ? response.data.totalUsers 
+        : response.data.length;
+      
+      setUserCount(count || 0);
     } catch (error) {
       console.error("Error fetching user count:", error);
     }

@@ -3,30 +3,45 @@ import axios from 'axios';
 import { CSVLink } from 'react-csv';
 import toast from 'react-hot-toast';
 
+// Vercel-এর জন্য ডায়নামিক URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ name: '', role: 'User' });
+  
+  // Pagination States
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/users');
-      setUsers(response.data);
+      const response = await axios.get(`${API_BASE_URL}/api/users?page=${page}&limit=5`);
+      
+      // ব্যাকএন্ড থেকে আসা নতুন পেজিনেশন অবজেক্ট হ্যান্ডেল করা
+      if (response.data.users) {
+        setUsers(response.data.users);
+        setTotalPages(response.data.totalPages);
+      } else {
+        setUsers(response.data); // Fallback
+      }
     } catch (error) {
       toast.error("Error fetching users data!");
       console.error("Error fetching data: ", error);
     }
   };
 
+  // পেজ পরিবর্তন হলে নতুন ডাটা আনবে
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/users/${id}`);
+        await axios.delete(`${API_BASE_URL}/api/users/${id}`);
         toast.success("User deleted successfully!");
         fetchUsers();
       } catch (error) {
@@ -43,7 +58,7 @@ const UserList = () => {
 
   const handleSaveUpdate = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/users/${id}`, editFormData);
+      await axios.put(`${API_BASE_URL}/api/users/${id}`, editFormData);
       toast.success("User updated successfully!");
       setEditingId(null);
       fetchUsers();
@@ -175,6 +190,28 @@ const UserList = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center mt-6 px-2">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage((prev) => prev - 1)}
+          className="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg disabled:opacity-50 hover:bg-slate-600 transition-all text-sm font-medium"
+        >
+          Previous
+        </button>
+        <span className="text-sm text-slate-400">
+          Page <span className="font-bold text-white">{page}</span> of {totalPages}
+        </span>
+        <button
+          disabled={page === totalPages || totalPages === 0}
+          onClick={() => setPage((prev) => prev + 1)}
+          className="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg disabled:opacity-50 hover:bg-slate-600 transition-all text-sm font-medium"
+        >
+          Next
+        </button>
+      </div>
+
     </div>
   );
 };
