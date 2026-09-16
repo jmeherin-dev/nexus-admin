@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ["Admin", "Manager", "User"], default: "User" },
+    avatar: { type: String, default: "" }, // 👈 প্রোফাইল ছবির পাত (File Path) সেভ রাখার জন্য
     otp: { type: String },
     otpExpires: { type: Date },
   },

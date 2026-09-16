@@ -26,7 +26,7 @@ export const getUsers = async (req, res) => {
   }
 };
 
-// @desc    নতুন ইউজার তৈরি করা (Create a new user)
+// @desc    নতুন ইউজার তৈরি করা (Create a new user with avatar)
 // @route   POST /api/users
 export const createUser = async (req, res) => {
   try {
@@ -41,7 +41,17 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ message: "User with this email already exists" });
     }
 
-    const newUser = new User({ name, email, password, role });
+    // ছবি আপলোড হলে তার পাথ সেট করা
+    const avatarPath = req.file ? `uploads/${req.file.filename}` : '';
+
+    const newUser = new User({ 
+      name, 
+      email, 
+      password, 
+      role, 
+      avatar: avatarPath 
+    });
+    
     await newUser.save();
 
     const userResponse = newUser.toObject();
@@ -67,16 +77,23 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// @desc    ইউজার আপডেট করা (Update user)
+// @desc    ইউজার আপডেট করা (Update user with avatar option)
 // @route   PUT /api/users/:id
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, role } = req.body;
 
+    const updateData = { name, role };
+
+    // যদি নতুন কোনো ছবি আপলোড করা হয়
+    if (req.file) {
+      updateData.avatar = `uploads/${req.file.filename}`;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { name, role },
+      updateData,
       { new: true }
     ).select("-password -otp -otpExpires");
 

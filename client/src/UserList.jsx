@@ -6,7 +6,6 @@ import ConfirmModal from './components/ConfirmModal';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const UserList = () => {
-  // Current User Role Check
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = currentUser?.role === 'Admin';
 
@@ -14,39 +13,50 @@ const UserList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Inline Editing State
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ name: '', role: 'User' });
   
-  // Delete Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
-  // Pagination State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Sorting State
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-
-  // Drag to Reorder State
   const [draggedIndex, setDraggedIndex] = useState(null);
-
-  // Keyboard Shortcuts Modal State
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/users?page=${page}&limit=10`);
-      if (response.data.users) {
+      const token = localStorage.getItem('token');
+      // limit=5 সেট করা হয়েছে
+      const response = await axios.get(`${API_BASE_URL}/api/users?page=${page}&limit=5`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data && Array.isArray(response.data.users)) {
         setUsers(response.data.users);
-        setTotalPages(response.data.totalPages);
+        setTotalPages(response.data.totalPages || 1);
+      } else if (Array.isArray(response.data)) {
+        // ব্যাকএন্ড পেজিনেশন হ্যান্ডেল না করলে ফ্রন্টএন্ডে ক্লায়েন্ট-সাইড পেজিনেশন হবে
+        const allUsers = response.data;
+        const limit = 5;
+        const calculatedTotalPages = Math.ceil(allUsers.length / limit) || 1;
+        
+        const startIndex = (page - 1) * limit;
+        const paginatedUsers = allUsers.slice(startIndex, startIndex + limit);
+
+        setUsers(paginatedUsers);
+        setTotalPages(calculatedTotalPages);
       } else {
-        setUsers(response.data);
+        setUsers([]);
       }
     } catch (error) {
-      console.error("Error fetching data: ", error);
+      console.error("Error fetching data: ", error.response?.data || error.message);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -56,7 +66,6 @@ const UserList = () => {
     fetchUsers();
   }, [page]);
 
-  // Keyboard Shortcuts Listener
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
@@ -78,7 +87,6 @@ const UserList = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Sorting Handler
   const handleSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -87,7 +95,6 @@ const UserList = () => {
     setSortConfig({ key, direction });
   };
 
-  // Drag-and-Drop Handlers
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
@@ -107,7 +114,6 @@ const UserList = () => {
     setDraggedIndex(null);
   };
 
-  // Inline Edit Handlers
   const handleEditClick = (user) => {
     setEditingId(user._id);
     setEditFormData({ name: user.name, role: user.role });
@@ -115,7 +121,10 @@ const UserList = () => {
 
   const handleSaveUpdate = async (id) => {
     try {
-      await axios.put(`${API_BASE_URL}/api/users/${id}`, editFormData);
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_BASE_URL}/api/users/${id}`, editFormData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setEditingId(null);
       fetchUsers();
     } catch (error) {
@@ -123,7 +132,6 @@ const UserList = () => {
     }
   };
 
-  // Delete Handlers
   const promptDelete = (id) => {
     setUserToDelete(id);
     setIsModalOpen(true);
@@ -132,7 +140,10 @@ const UserList = () => {
   const confirmDeleteUser = async () => {
     if (!userToDelete) return;
     try {
-      await axios.delete(`${API_BASE_URL}/api/users/${userToDelete}`);
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_BASE_URL}/api/users/${userToDelete}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       fetchUsers();
     } catch (error) {
       console.error("Error deleting user: ", error);
@@ -141,10 +152,9 @@ const UserList = () => {
     }
   };
 
-  // Filtered & Sorted Data
   const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedUsers = [...filteredUsers].sort((a, b) => {
@@ -236,7 +246,7 @@ const UserList = () => {
                   onClick={() => handleSort('name')} 
                   className="py-3 px-4 cursor-pointer select-none hover:text-indigo-400 transition"
                 >
-                  Name {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                  User {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
                 </th>
                 <th 
                   onClick={() => handleSort('email')} 
@@ -275,7 +285,19 @@ const UserList = () => {
                     ⋮⋮
                   </td>
 
-                  <td className="py-3.5 px-4 font-medium">
+                  <td className="py-3.5 px-4 font-medium flex items-center gap-3">
+                    {user.avatar ? (
+                      <img 
+                        src={`${API_BASE_URL}/${user.avatar}`} 
+                        alt={user.name} 
+                        className="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-700 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 font-bold flex items-center justify-center text-sm border border-indigo-500/20 shrink-0">
+                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
+                    
                     {editingId === user._id ? (
                       <input
                         type="text"
@@ -284,10 +306,12 @@ const UserList = () => {
                         className="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                       />
                     ) : (
-                      user.name
+                      <span>{user.name}</span>
                     )}
                   </td>
+
                   <td className="py-3.5 px-4 opacity-80">{user.email}</td>
+                  
                   <td className="py-3.5 px-4">
                     {editingId === user._id ? (
                       <select
@@ -305,11 +329,11 @@ const UserList = () => {
                       </span>
                     )}
                   </td>
+
                   <td className="py-3.5 px-4 opacity-80">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                   </td>
                   
-                  {/* Admin শুধুমাত্র Edit এবং Delete অ্যাকশন দেখতে পাবেন */}
                   {isAdmin && (
                     <td className="py-3.5 px-4 text-right space-x-2">
                       {editingId === user._id ? (
@@ -353,9 +377,9 @@ const UserList = () => {
       {/* Pagination Controls */}
       <div className="flex justify-between items-center mt-6 px-2">
         <button
-          disabled={page === 1}
-          onClick={() => setPage((prev) => prev - 1)}
-          className="px-4 py-2 bg-slate-200 dark:bg-slate-700 disabled:opacity-50 hover:bg-slate-300 dark:hover:bg-slate-600 transition-all text-sm font-medium rounded-lg"
+          disabled={page <= 1}
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          className="px-4 py-2 bg-slate-200 dark:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-300 dark:hover:bg-slate-600 transition-all text-sm font-medium rounded-lg"
         >
           Previous
         </button>
@@ -363,15 +387,14 @@ const UserList = () => {
           Page <span className="font-bold">{page}</span> of {totalPages}
         </span>
         <button
-          disabled={page === totalPages || totalPages === 0}
-          onClick={() => setPage((prev) => prev + 1)}
-          className="px-4 py-2 bg-slate-200 dark:bg-slate-700 disabled:opacity-50 hover:bg-slate-300 dark:hover:bg-slate-600 transition-all text-sm font-medium rounded-lg"
+          disabled={page >= totalPages}
+          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+          className="px-4 py-2 bg-slate-200 dark:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-300 dark:hover:bg-slate-600 transition-all text-sm font-medium rounded-lg"
         >
           Next
         </button>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -380,7 +403,6 @@ const UserList = () => {
         message="Are you sure you want to delete this user? This action cannot be undone."
       />
 
-      {/* Keyboard Shortcuts Help Modal */}
       {isShortcutsOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div 
