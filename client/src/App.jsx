@@ -13,7 +13,7 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [userCount, setUserCount] = useState(0);
 
-  // ডাটাবেজ থেকে ইউজারের মোট সংখ্যা নিয়ে আসা
+  // ডাটাবেজ থেকে ইউজারের মোট সংখ্যা নিয়ে আসা
   const fetchUserCount = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/users`);
@@ -37,29 +37,47 @@ export default function App() {
   };
 
   return (
-    <div className="flex bg-slate-900 min-h-screen font-sans">
+    <div 
+      className="flex min-h-screen font-sans transition-colors duration-300" 
+      style={{ backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+    >
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Header />
-        <main className="p-8 text-slate-200">
+        <main className="p-8">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white">Dashboard Overview</h1>
-            <p className="text-sm text-slate-400">Welcome back to NexusAdmin control center.</p>
+            <h1 className="text-2xl font-bold transition-colors duration-300">
+              Dashboard Overview
+            </h1>
+            <p className="text-sm opacity-70 transition-colors duration-300">
+              Welcome back to NexusAdmin control center.
+            </p>
           </div>
           
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700/70 shadow-sm">
-              <p className="text-slate-400 text-sm font-medium">Total Revenue</p>
-              <p className="text-3xl font-extrabold text-indigo-400 mt-2">$24,500</p>
+            <div 
+              className="p-6 rounded-2xl shadow-sm transition-colors duration-300" 
+              style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+            >
+              <p className="opacity-70 text-sm font-medium">Total Revenue</p>
+              <p className="text-3xl font-extrabold text-indigo-500 mt-2">$24,500</p>
             </div>
-            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700/70 shadow-sm">
-              <p className="text-slate-400 text-sm font-medium">Active Users</p>
-              <p className="text-3xl font-extrabold text-emerald-400 mt-2">{userCount}</p>
+            
+            <div 
+              className="p-6 rounded-2xl shadow-sm transition-colors duration-300" 
+              style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+            >
+              <p className="opacity-70 text-sm font-medium">Active Users</p>
+              <p className="text-3xl font-extrabold text-emerald-500 mt-2">{userCount}</p>
             </div>
-            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700/70 shadow-sm">
-              <p className="text-slate-400 text-sm font-medium">Conversion Rate</p>
-              <p className="text-3xl font-extrabold text-amber-400 mt-2">3.42%</p>
+            
+            <div 
+              className="p-6 rounded-2xl shadow-sm transition-colors duration-300" 
+              style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+            >
+              <p className="opacity-70 text-sm font-medium">Conversion Rate</p>
+              <p className="text-3xl font-extrabold text-amber-500 mt-2">3.42%</p>
             </div>
           </div>
 

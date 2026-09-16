@@ -1,12 +1,23 @@
-import React, { createContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
-export const ThemeContext = createContext();
+const ThemeContext = createContext();
 
-export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+export function ThemeProvider({ children }) {
+  // localStorage থেকে থিম রিড করবে, ডিফল্ট 'dark' থাকবে
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'dark';
+  });
 
   useEffect(() => {
-    document.documentElement.className = theme;
+    const root = document.documentElement; // <html> ট্যাগ
+    
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+
+    // ব্রাউজারে থিম সেভ রেখে দেবে
     localStorage.setItem('theme', theme);
   }, [theme]);
 
@@ -19,4 +30,8 @@ export const ThemeProvider = ({ children }) => {
       {children}
     </ThemeContext.Provider>
   );
-};
+}
+
+export function useTheme() {
+  return useContext(ThemeContext);
+}

@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+/* Base variables */
+:root {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+}
+
+/* Dark mode variables */
+html.dark {
+  --bg-main: #0f172a;
+  --bg-card: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+}
+
+/* Force CSS variable overrides across the app */
+body, #root, main, aside, header, div, form, table, tr, td, th {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Card element specificity */
+aside, header, div[class*="rounded"], div[class*="shadow"] {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Text color fix */
+p, span, h1, h2, h3, h4, label {
+  color: var(--text-main) !important;
+}
