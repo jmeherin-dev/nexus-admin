@@ -72,34 +72,54 @@ export default function App() {
                 </p>
               </div>
               
-              {/* Stats Cards */}
+              {/* Stats Cards with Green/Red Comparison Indicators */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Total Revenue Card */}
                 <div 
-                  className="p-6 rounded-2xl shadow-sm transition-colors duration-300" 
+                  className="p-6 rounded-2xl shadow-sm transition-colors duration-300 relative overflow-hidden" 
                   style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                 >
-                  <p className="opacity-70 text-sm font-medium">Total Revenue</p>
+                  <div className="flex justify-between items-start">
+                    <p className="opacity-70 text-sm font-medium">Total Revenue</p>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-0.5">
+                      ▲ +12.5% <span className="opacity-60 text-[9px]">vs last month</span>
+                    </span>
+                  </div>
                   <p className="text-3xl font-extrabold text-indigo-500 mt-2">$24,500</p>
                 </div>
                 
+                {/* Active Users Card */}
                 <div 
-                  className="p-6 rounded-2xl shadow-sm transition-colors duration-300" 
+                  className="p-6 rounded-2xl shadow-sm transition-colors duration-300 relative overflow-hidden" 
                   style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                 >
-                  <p className="opacity-70 text-sm font-medium">Active Users</p>
+                  <div className="flex justify-between items-start">
+                    <p className="opacity-70 text-sm font-medium">Active Users</p>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-0.5">
+                      ▲ +8.2% <span className="opacity-60 text-[9px]">vs last week</span>
+                    </span>
+                  </div>
                   <p className="text-3xl font-extrabold text-emerald-500 mt-2">{userCount}</p>
                 </div>
                 
+                {/* Conversion Rate Card */}
                 <div 
-                  className="p-6 rounded-2xl shadow-sm transition-colors duration-300" 
+                  className="p-6 rounded-2xl shadow-sm transition-colors duration-300 relative overflow-hidden" 
                   style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                 >
-                  <p className="opacity-70 text-sm font-medium">Conversion Rate</p>
+                  <div className="flex justify-between items-start">
+                    <p className="opacity-70 text-sm font-medium">Conversion Rate</p>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center gap-0.5">
+                      ▼ -0.4% <span className="opacity-60 text-[9px]">vs last month</span>
+                    </span>
+                  </div>
                   <p className="text-3xl font-extrabold text-amber-500 mt-2">3.42%</p>
                 </div>
+
               </div>
 
-              {/* Analytics Chart */}
+              {/* Analytics Chart Component */}
               <AnalyticsChart />
             </>
           )}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTheme } from './ThemeContext'; // ফাইল লোকেশন অনুযায়ী পাথ খেয়াল রাখবেন
+import { useTheme } from './ThemeContext'; // ফাইল লোকেশন অনুযায়ী পাথ খেয়াল রাখবেন
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
