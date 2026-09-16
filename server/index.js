@@ -4,6 +4,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import securityRoutes from "./routes/security.js"; // 👈 যুক্ত করা হলো
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/security", securityRoutes); // 👈 যুক্ত করা হলো
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)

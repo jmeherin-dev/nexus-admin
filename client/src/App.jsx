@@ -8,6 +8,7 @@ import AddUserForm from './AddUserForm';
 import AnalyticsChart from './components/AnalyticsChart';
 import Billing from './components/Billing';
 import ApiAndWebhooks from './components/ApiAndWebhooks';
+import SessionAndSecurity from './components/SessionAndSecurity';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -141,9 +142,12 @@ export default function App() {
             <Billing />
           )}
 
-          {/* TAB 4: SETTINGS & API */}
+          {/* TAB 4: SETTINGS, API & SECURITY */}
           {activeTab === 'settings' && (
-            <ApiAndWebhooks />
+            <div className="space-y-8">
+              <ApiAndWebhooks />
+              <SessionAndSecurity />
+            </div>
           )}
 
         </main>
