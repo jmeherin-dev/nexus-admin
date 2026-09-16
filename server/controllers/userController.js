@@ -4,21 +4,17 @@ import User from "../models/User.js";
 // @route   GET /api/users
 export const getUsers = async (req, res) => {
   try {
-    // URLQuery থেকে page এবং limit ধরবে (ডিফল্ট: page 1, limit 5)
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    // মোট ইউজারের সংখ্যা গণনা
     const totalUsers = await User.countDocuments();
 
-    // পেজিনেশন অনুযায়ী ডাটাবেজ থেকে ইউজার নিয়ে আসবে
     const users = await User.find()
-      .select("-password")
+      .select("-password -otp -otpExpires")
       .skip(skip)
       .limit(limit);
 
-    // ফ্রন্টএন্ডের জন্য ডাটা এবং পেজিনেশন ইনফো একসাথে রেসপন্স করবে
     res.status(200).json({
       users,
       currentPage: page,
@@ -40,10 +36,20 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ message: "Please provide all required fields" });
     }
 
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User with this email already exists" });
+    }
+
     const newUser = new User({ name, email, password, role });
     await newUser.save();
 
-    res.status(201).json({ message: "User created successfully!", user: newUser });
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+    delete userResponse.otp;
+    delete userResponse.otpExpires;
+
+    res.status(201).json({ message: "User created successfully!", user: userResponse });
   } catch (error) {
     res.status(500).json({ message: "Error creating user", error: error.message });
   }
@@ -72,7 +78,7 @@ export const updateUser = async (req, res) => {
       id,
       { name, role },
       { new: true }
-    ).select("-password");
+    ).select("-password -otp -otpExpires");
 
     res.status(200).json(updatedUser);
   } catch (error) {

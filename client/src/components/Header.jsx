@@ -1,9 +1,18 @@
 import { useState } from 'react';
-import { useTheme } from './ThemeContext'; // ফাইল লোকেশন অনুযায়ী পাথ খেয়াল রাখবেন
+import { useTheme } from './ThemeContext'; // ফাইল লোকেশন অনুযায়ী পাথ খেয়াল রাখবেন
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
-  
+
+  // Organization Switcher State
+  const [orgs] = useState([
+    { id: 1, name: 'Acme Corp', role: 'Owner' },
+    { id: 2, name: 'Starlight Inc', role: 'Admin' },
+    { id: 3, name: 'DevStudio', role: 'Member' }
+  ]);
+  const [currentOrg, setCurrentOrg] = useState(orgs[0]);
+  const [showOrgDropdown, setShowOrgDropdown] = useState(false);
+
   // Notifications State
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([
@@ -26,10 +35,46 @@ export default function Header() {
 
   return (
     <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800 transition-colors duration-300 relative z-40">
-      <div>
+      
+      {/* Left Side: Overview & Workspace Switcher */}
+      <div className="flex items-center gap-4">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Overview</h2>
+
+        {/* Organization Switcher Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowOrgDropdown(!showOrgDropdown)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer text-slate-800 dark:text-slate-100"
+          >
+            <div className="w-6 h-6 rounded bg-indigo-600 flex items-center justify-center font-bold text-xs text-white">
+              {currentOrg.name[0]}
+            </div>
+            <div className="text-left hidden sm:block">
+              <p className="text-xs font-semibold leading-tight">{currentOrg.name}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{currentOrg.role}</p>
+            </div>
+            <span className="text-[10px] opacity-60 ml-1">▼</span>
+          </button>
+
+          {showOrgDropdown && (
+            <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 py-1">
+              <p className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400">Workspaces</p>
+              {orgs.map((org) => (
+                <button
+                  key={org.id}
+                  onClick={() => { setCurrentOrg(org); setShowOrgDropdown(false); }}
+                  className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 flex justify-between items-center transition-colors text-slate-800 dark:text-slate-200"
+                >
+                  <span>{org.name}</span>
+                  {currentOrg.id === org.id && <span className="text-indigo-600 dark:text-indigo-400 font-bold">✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Right Side: Notifications, Theme, User Info */}
       <div className="flex items-center gap-4">
         {/* Notification Bell */}
         <div className="relative">

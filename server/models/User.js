@@ -7,11 +7,13 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ["Admin", "Manager", "User"], default: "User" },
+    otp: { type: String },
+    otpExpires: { type: Date },
   },
   { timestamps: true }
 );
 
-// সেভ করার আগে পাসওয়ার্ড অটোমেটিক হ্যাশ করার হুক
+// সেভ করার আগে পাসওয়ার্ড অটোমেটিক হ্যাশ করার হুক
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
