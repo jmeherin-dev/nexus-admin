@@ -4,6 +4,10 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AddUserForm({ onUserAdded }) {
+  // 1. Admin Check
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = currentUser?.role === 'Admin';
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,6 +15,11 @@ export default function AddUserForm({ onUserAdded }) {
     role: 'User'
   });
   const [loading, setLoading] = useState(false);
+
+  // 2. Admin না হলে ফর্ম রেন্ডার হবে না
+  if (!isAdmin) {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

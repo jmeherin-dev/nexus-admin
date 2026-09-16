@@ -6,11 +6,15 @@ import ConfirmModal from './components/ConfirmModal';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const UserList = () => {
+  // Current User Role Check
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = currentUser?.role === 'Admin';
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // 1. Inline Editing State
+  // Inline Editing State
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ name: '', role: 'User' });
   
@@ -22,13 +26,13 @@ const UserList = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // 2. Sorting State
+  // Sorting State
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
 
-  // 3. Drag to Reorder State
+  // Drag to Reorder State
   const [draggedIndex, setDraggedIndex] = useState(null);
 
-  // 4. Keyboard Shortcuts Modal State
+  // Keyboard Shortcuts Modal State
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
   const fetchUsers = async () => {
@@ -52,22 +56,19 @@ const UserList = () => {
     fetchUsers();
   }, [page]);
 
-  // Keyboard Shortcuts Listener (Ctrl+N, Esc, Shift+?)
+  // Keyboard Shortcuts Listener
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ctrl + N / Cmd + N -> Focus Add User Input
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         const addInput = document.querySelector('input[placeholder="Name"]');
         if (addInput) addInput.focus();
       }
-      // Escape -> Cancel Edit or Close Modals
       if (e.key === 'Escape') {
         setIsModalOpen(false);
         setIsShortcutsOpen(false);
         setEditingId(null);
       }
-      // '?' Key -> Open Keyboard Shortcuts Help
       if (e.key === '?' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
         setIsShortcutsOpen((prev) => !prev);
       }
@@ -231,8 +232,6 @@ const UserList = () => {
             <thead className="text-xs uppercase bg-slate-100 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 opacity-70">
               <tr>
                 <th className="py-3 px-2 w-8 text-center">⋮⋮</th>
-                
-                {/* 1. Sortable Columns */}
                 <th 
                   onClick={() => handleSort('name')} 
                   className="py-3 px-4 cursor-pointer select-none hover:text-indigo-400 transition"
@@ -257,7 +256,7 @@ const UserList = () => {
                 >
                   Joined Date {sortConfig.key === 'createdAt' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
                 </th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                {isAdmin && <th className="py-3 px-4 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700/50">
@@ -272,12 +271,10 @@ const UserList = () => {
                     draggedIndex === index ? 'opacity-30 border-2 border-dashed border-indigo-500' : ''
                   }`}
                 >
-                  {/* 3. Drag Handle */}
                   <td className="py-3.5 px-2 text-center cursor-grab active:cursor-grabbing opacity-40 hover:opacity-100">
                     ⋮⋮
                   </td>
 
-                  {/* 2. Inline Editing Row */}
                   <td className="py-3.5 px-4 font-medium">
                     {editingId === user._id ? (
                       <input
@@ -311,37 +308,41 @@ const UserList = () => {
                   <td className="py-3.5 px-4 opacity-80">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="py-3.5 px-4 text-right space-x-2">
-                    {editingId === user._id ? (
-                      <>
+                  
+                  {/* Admin শুধুমাত্র Edit এবং Delete অ্যাকশন দেখতে পাবেন */}
+                  {isAdmin && (
+                    <td className="py-3.5 px-4 text-right space-x-2">
+                      {editingId === user._id ? (
+                        <>
+                          <button 
+                            onClick={() => handleSaveUpdate(user._id)}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm"
+                          >
+                            Save
+                          </button>
+                          <button 
+                            onClick={() => setEditingId(null)}
+                            className="bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
                         <button 
-                          onClick={() => handleSaveUpdate(user._id)}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm"
+                          onClick={() => handleEditClick(user)}
+                          className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-indigo-600 dark:text-indigo-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                         >
-                          Save
+                          Edit
                         </button>
-                        <button 
-                          onClick={() => setEditingId(null)}
-                          className="bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
+                      )}
                       <button 
-                        onClick={() => handleEditClick(user)}
-                        className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-indigo-600 dark:text-indigo-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                        onClick={() => promptDelete(user._id)}
+                        className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                       >
-                        Edit
+                        Delete
                       </button>
-                    )}
-                    <button 
-                      onClick={() => promptDelete(user._id)}
-                      className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                    >
-                      Delete
-                    </button>
-                  </td>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -379,7 +380,7 @@ const UserList = () => {
         message="Are you sure you want to delete this user? This action cannot be undone."
       />
 
-      {/* 4. Keyboard Shortcuts Help Modal */}
+      {/* Keyboard Shortcuts Help Modal */}
       {isShortcutsOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div 

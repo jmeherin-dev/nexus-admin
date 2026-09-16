@@ -37,6 +37,11 @@ export default function Login() {
 
       if (data.requireOTP) {
         setStep(2);
+      } else if (data.token) {
+        // OTP না লাগলে সরাসরি টোকেন ও ইউজার সেভ
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.reload();
       }
     } catch (err) {
       setError(err.message);
@@ -64,9 +69,10 @@ export default function Login() {
         throw new Error(data.message || 'Invalid or expired OTP');
       }
 
+      // টোকেন ও ইউজার ডাটা সেভ
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      window.location.reload(); // ProtectedRoute সরাসরি ড্যাশবোর্ড দেখাবে
+      window.location.reload();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -91,7 +97,6 @@ export default function Login() {
         )}
 
         {step === 1 ? (
-          /* Step 1 Form */
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1 text-slate-300">Email</label>
@@ -124,7 +129,6 @@ export default function Login() {
             </button>
           </form>
         ) : (
-          /* Step 2 Form (OTP) */
           <form onSubmit={handleVerifyOTP} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1 text-slate-300 text-center">6-Digit OTP</label>
