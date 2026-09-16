@@ -15,3 +15,9 @@ NexusAdmin is a modern, responsive full-stack admin dashboard built with the MER
 - Interactive Dashboard Overview & Metrics
 - Full CRUD Operations for User Management
 - Data Table with Sorting & Filtering
+## Installation & Local Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/jmeherin-dev/nexus-admin.git](https://github.com/jmeherin-dev/nexus-admin.git)
+   cd nexus-admin
