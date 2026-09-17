@@ -1,22 +1,9 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// Nodemailer Transporter Config (Port 587, IPv4 & TLS forced)
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  family: 4, // Render IPv6 ENETUNREACH error আটকানোর জন্য IPv4 ফোর্স করা হলো
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // 1. Step-1 Login: Verify credentials and send OTP
 export const loginUser = async (req, res) => {
@@ -29,17 +16,15 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    // 6-digit OTP জেনারেট করা
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
 
     user.otp = otp;
     user.otpExpires = otpExpires;
     await user.save();
 
-    // ইমেইলে OTP পাঠানো
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    const { error } = await resend.emails.send({
+      from: 'onboarding@resend.dev',
       to: user.email,
       subject: 'NexusAdmin - Your 2FA Verification Code',
       html: `<div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -48,9 +33,12 @@ export const loginUser = async (req, res) => {
         <h1 style="color: #4F46E5; letter-spacing: 5px;">${otp}</h1>
         <p>This code will expire in 5 minutes.</p>
       </div>`,
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
+    if (error) {
+      console.error('Resend Email Error:', error);
+      return res.status(500).json({ message: 'Server error sending OTP' });
+    }
 
     res.status(200).json({
       requireOTP: true,
@@ -74,12 +62,10 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-    // OTP ভ্যালিড হলে ক্লিয়ার করা
     user.otp = undefined;
     user.otpExpires = undefined;
     await user.save();
 
-    // JWT Token জেনারেট
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET || 'nexusadmin_super_secret_key_2026',
