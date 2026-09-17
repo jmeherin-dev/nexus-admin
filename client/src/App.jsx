@@ -6,7 +6,6 @@ import Login from "./components/Login";
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import UserList from './UserList';
-import AddUserForm from './AddUserForm';
 import AnalyticsChart from './components/AnalyticsChart';
 import Billing from './components/Billing';
 import ApiAndWebhooks from './components/ApiAndWebhooks';
@@ -22,10 +21,14 @@ export default function App() {
   const [userCount, setUserCount] = useState(0);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const fetchUserCount = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/users`);
+      const authToken = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE_URL}/api/users`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
       const count = response.data.totalUsers !== undefined 
         ? response.data.totalUsers 
         : response.data.length;
@@ -65,11 +68,16 @@ export default function App() {
     >
       <OnboardingTour isOpen={isTourOpen} onClose={handleCloseTour} />
       <CommandPalette setActiveTab={setActiveTab} />
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        isMobileOpen={isMobileOpen}
+        setIsMobileOpen={setIsMobileOpen}
+      />
 
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="p-8 space-y-8">
+      <div className="flex-1 flex flex-col w-full min-w-0">
+        <Header onMenuClick={() => setIsMobileOpen(true)} />
+        <main className="p-4 sm:p-8 space-y-6 sm:space-y-8">
           
           <AnimatePresence mode="wait">
             <motion.div
@@ -78,13 +86,13 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
-              className="space-y-8"
+              className="space-y-6 sm:space-y-8"
             >
               {activeTab === 'dashboard' && (
                 <>
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                      <h1 className="text-2xl font-bold">Dashboard Overview</h1>
+                      <h1 className="text-xl sm:text-2xl font-bold">Dashboard Overview</h1>
                       <p className="text-sm opacity-70">Welcome back to NexusAdmin control center.</p>
                     </div>
                     <button
@@ -95,11 +103,11 @@ export default function App() {
                     </button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                     <motion.div 
                       whileHover={{ y: -4, scale: 1.01 }}
                       transition={{ duration: 0.2 }}
-                      className="p-6 rounded-2xl shadow-sm relative overflow-hidden" 
+                      className="p-5 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden" 
                       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                     >
                       <div className="flex justify-between items-start">
@@ -114,7 +122,7 @@ export default function App() {
                     <motion.div 
                       whileHover={{ y: -4, scale: 1.01 }}
                       transition={{ duration: 0.2 }}
-                      className="p-6 rounded-2xl shadow-sm relative overflow-hidden" 
+                      className="p-5 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden" 
                       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                     >
                       <div className="flex justify-between items-start">
@@ -129,7 +137,7 @@ export default function App() {
                     <motion.div 
                       whileHover={{ y: -4, scale: 1.01 }}
                       transition={{ duration: 0.2 }}
-                      className="p-6 rounded-2xl shadow-sm relative overflow-hidden" 
+                      className="p-5 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden" 
                       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                     >
                       <div className="flex justify-between items-start">
@@ -149,11 +157,10 @@ export default function App() {
               {activeTab === 'users' && (
                 <>
                   <div>
-                    <h1 className="text-2xl font-bold">User Management</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold">User Management</h1>
                     <p className="text-sm opacity-70">Manage registered accounts and control access.</p>
                   </div>
-                  <AddUserForm onUserAdded={handleUserAdded} />
-                  <UserList key={refreshKey} />
+                  <UserList key={refreshKey} onUserAdded={handleUserAdded} />
                 </>
               )}
 

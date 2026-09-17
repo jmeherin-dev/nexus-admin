@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useTheme } from './ThemeContext'; // ফাইল লোকেশন অনুযায়ী পাথ খেয়াল রাখবেন
+import { useTheme } from './ThemeContext';
 
-export default function Header() {
+export default function Header({ onMenuClick }) {
   const { theme, toggleTheme } = useTheme();
 
-  // Organization Switcher State
   const [orgs] = useState([
     { id: 1, name: 'Acme Corp', role: 'Owner' },
     { id: 2, name: 'Starlight Inc', role: 'Admin' },
@@ -13,7 +12,6 @@ export default function Header() {
   const [currentOrg, setCurrentOrg] = useState(orgs[0]);
   const [showOrgDropdown, setShowOrgDropdown] = useState(false);
 
-  // Notifications State
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 1, title: 'New User Registered', time: '5m ago', unread: true },
@@ -36,11 +34,17 @@ export default function Header() {
   return (
     <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800 transition-colors duration-300 relative z-40">
       
-      {/* Left Side: Overview & Workspace Switcher */}
-      <div className="flex items-center gap-4">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Overview</h2>
+      <div className="flex items-center gap-3">
+        {/* Hamburger Menu Button - শুধু মোবাইলে দেখা যাবে */}
+        <button
+          onClick={onMenuClick}
+          className="md:hidden p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xl"
+        >
+          ☰
+        </button>
 
-        {/* Organization Switcher Dropdown */}
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white hidden sm:block">Overview</h2>
+
         <div className="relative">
           <button
             onClick={() => setShowOrgDropdown(!showOrgDropdown)}
@@ -74,9 +78,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Right Side: Notifications, Theme, User Info */}
-      <div className="flex items-center gap-4">
-        {/* Notification Bell */}
+      <div className="flex items-center gap-2 sm:gap-4">
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
@@ -91,9 +93,8 @@ export default function Header() {
             )}
           </button>
 
-          {/* Notification Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 text-slate-800 dark:text-slate-200 z-50">
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 text-slate-800 dark:text-slate-200 z-50">
               <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">
                 <span className="font-semibold text-sm text-slate-900 dark:text-white">Notifications</span>
                 {unreadCount > 0 && (
@@ -130,7 +131,6 @@ export default function Header() {
           )}
         </div>
 
-        {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
           className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer text-xl"
@@ -139,8 +139,7 @@ export default function Header() {
           {theme === 'dark' ? '🌞' : '🌙'}
         </button>
 
-        {/* User Info & Logout */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Admin User</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">admin@nexus.com</p>
@@ -151,7 +150,7 @@ export default function Header() {
 
           <button
             onClick={handleLogout}
-            className="ml-2 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800/50 transition-colors cursor-pointer"
+            className="ml-1 sm:ml-2 px-2 sm:px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800/50 transition-colors cursor-pointer"
           >
             Logout
           </button>

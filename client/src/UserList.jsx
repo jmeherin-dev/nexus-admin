@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { CSVLink } from 'react-csv';
 import ConfirmModal from './components/ConfirmModal';
@@ -6,18 +6,22 @@ import ConfirmModal from './components/ConfirmModal';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const UserList = () => {
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = currentUser?.role === 'Admin';
+  // Safe LocalStorage Admin Checking with State
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ name: '', role: 'User' });
-  
+
+  // Modals & User creation state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'User' });
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -26,26 +30,41 @@ const UserList = () => {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
-  const fetchUsers = async () => {
+  // Check Admin Role on Component Mount
+  useEffect(() => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const directRole = localStorage.getItem('role');
+      const role = storedUser?.role || directRole || '';
+
+      if (role.toLowerCase() === 'admin') {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    } catch (err) {
+      console.error("Failed to parse user role", err);
+      setIsAdmin(false);
+    }
+  }, []);
+
+  // Fetch Users
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      // limit=5 সেট করা হয়েছে
       const response = await axios.get(`${API_BASE_URL}/api/users?page=${page}&limit=5`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (response.data && Array.isArray(response.data.users)) {
         setUsers(response.data.users);
         setTotalPages(response.data.totalPages || 1);
       } else if (Array.isArray(response.data)) {
-        // ব্যাকএন্ড পেজিনেশন হ্যান্ডেল না করলে ফ্রন্টএন্ডে ক্লায়েন্ট-সাইড পেজিনেশন হবে
         const allUsers = response.data;
         const limit = 5;
         const calculatedTotalPages = Math.ceil(allUsers.length / limit) || 1;
-        
+
         const startIndex = (page - 1) * limit;
         const paginatedUsers = allUsers.slice(startIndex, startIndex + limit);
 
@@ -60,22 +79,23 @@ const UserList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     fetchUsers();
-  }, [page]);
+  }, [fetchUsers]);
 
+  // Keyboard Shortcuts Handler
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        const addInput = document.querySelector('input[placeholder="Name"]');
-        if (addInput) addInput.focus();
+        if (isAdmin) setIsAddUserOpen(true);
       }
       if (e.key === 'Escape') {
         setIsModalOpen(false);
         setIsShortcutsOpen(false);
+        setIsAddUserOpen(false);
         setEditingId(null);
       }
       if (e.key === '?' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
@@ -85,8 +105,29 @@ const UserList = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isAdmin]);
 
+  // Create User
+  const handleAddUserSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/api/users`, newUser, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNewUser({ name: '', email: '', password: '', role: 'User' });
+      setIsAddUserOpen(false);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error adding user: ", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Failed to create user.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Table Sorting
   const handleSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -95,6 +136,7 @@ const UserList = () => {
     setSortConfig({ key, direction });
   };
 
+  // Drag and Drop
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
@@ -114,6 +156,7 @@ const UserList = () => {
     setDraggedIndex(null);
   };
 
+  // Edit User
   const handleEditClick = (user) => {
     setEditingId(user._id);
     setEditFormData({ name: user.name, role: user.role });
@@ -129,9 +172,11 @@ const UserList = () => {
       fetchUsers();
     } catch (error) {
       console.error("Error updating user: ", error);
+      alert("Failed to update user.");
     }
   };
 
+  // Delete User
   const promptDelete = (id) => {
     setUserToDelete(id);
     setIsModalOpen(true);
@@ -147,11 +192,14 @@ const UserList = () => {
       fetchUsers();
     } catch (error) {
       console.error("Error deleting user: ", error);
+      alert("Failed to delete user.");
     } finally {
       setUserToDelete(null);
+      setIsModalOpen(false);
     }
   };
 
+  // Search & Sorting logic
   const filteredUsers = users.filter((u) =>
     u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -176,10 +224,10 @@ const UserList = () => {
   });
 
   const getRoleBadge = (role) => {
-    switch (role) {
-      case 'Admin':
+    switch (role?.toLowerCase()) {
+      case 'admin':
         return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-      case 'Manager':
+      case 'manager':
         return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
       default:
         return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
@@ -191,6 +239,7 @@ const UserList = () => {
       className="p-6 rounded-2xl shadow-sm transition-colors duration-300 relative"
       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
     >
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2">
@@ -205,8 +254,18 @@ const UserList = () => {
           </div>
           <p className="text-xs opacity-70 mt-1">Total Active Accounts: {filteredUsers.length}</p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          {/* Add User Button - Only visible for Admins */}
+          {isAdmin && (
+            <button
+              onClick={() => setIsAddUserOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all shadow-md text-center inline-flex items-center justify-center gap-2 cursor-pointer"
+            >
+              ➕ Add User
+            </button>
+          )}
+
           <CSVLink
             data={filteredUsers}
             filename={"nexus-users-report.csv"}
@@ -227,6 +286,7 @@ const UserList = () => {
         </div>
       </div>
 
+      {/* User Table */}
       <div className="overflow-x-auto">
         {loading ? (
           <div className="animate-pulse space-y-4 py-4">
@@ -272,7 +332,7 @@ const UserList = () => {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700/50">
               {sortedUsers.map((user, index) => (
                 <tr 
-                  key={user._id}
+                  key={user._id || index}
                   draggable
                   onDragStart={(e) => handleDragStart(e, index)}
                   onDragOver={handleDragOver}
@@ -297,7 +357,7 @@ const UserList = () => {
                         {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                       </div>
                     )}
-                    
+
                     {editingId === user._id ? (
                       <input
                         type="text"
@@ -311,7 +371,7 @@ const UserList = () => {
                   </td>
 
                   <td className="py-3.5 px-4 opacity-80">{user.email}</td>
-                  
+
                   <td className="py-3.5 px-4">
                     {editingId === user._id ? (
                       <select
@@ -333,7 +393,8 @@ const UserList = () => {
                   <td className="py-3.5 px-4 opacity-80">
                     {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                   </td>
-                  
+
+                  {/* Actions Column - Restricted to Admins */}
                   {isAdmin && (
                     <td className="py-3.5 px-4 text-right space-x-2">
                       {editingId === user._id ? (
@@ -395,6 +456,7 @@ const UserList = () => {
         </button>
       </div>
 
+      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -403,6 +465,95 @@ const UserList = () => {
         message="Are you sure you want to delete this user? This action cannot be undone."
       />
 
+      {/* Add User Modal */}
+      {isAddUserOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div 
+            className="p-6 rounded-2xl max-w-md w-full shadow-2xl relative border"
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+          >
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg font-bold">➕ Create New Account</h3>
+              <button 
+                onClick={() => setIsAddUserOpen(false)}
+                className="text-xs px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 hover:opacity-80 transition"
+              >
+                ✕ Esc
+              </button>
+            </div>
+
+            <form onSubmit={handleAddUserSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold block mb-1">Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. John Doe"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 text-sm rounded-xl border dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold block mb-1">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="e.g. john@example.com"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 text-sm rounded-xl border dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold block mb-1">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 text-sm rounded-xl border dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold block mb-1">Role</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded-xl border dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="User">User</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6 pt-2 border-t dark:border-slate-700/50">
+                <button
+                  type="button"
+                  onClick={() => setIsAddUserOpen(false)}
+                  className="px-4 py-2 text-xs font-medium rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 text-xs font-medium rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-md disabled:opacity-50"
+                >
+                  {submitting ? 'Creating...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
       {isShortcutsOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div 
@@ -418,10 +569,10 @@ const UserList = () => {
                 Esc
               </button>
             </div>
-            
+
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center border-b pb-2 dark:border-slate-700">
-                <span>Add New User Form</span>
+                <span>Add New User Modal</span>
                 <kbd className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-800 rounded border">Ctrl + N</kbd>
               </div>
               <div className="flex justify-between items-center border-b pb-2 dark:border-slate-700">
