@@ -17,7 +17,11 @@ const __dirname = path.dirname(__filename);
 
 // Middleware - Updated CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://nexus-admin-three.vercel.app'
+  ],
   credentials: true
 }));
 
