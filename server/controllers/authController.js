@@ -3,11 +3,12 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 
-// Nodemailer Transporter Config (Port 587 and TLS added)
+// Nodemailer Transporter Config (Port 587, IPv4 & TLS forced)
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
   secure: false,
+  family: 4, // Render IPv6 ENETUNREACH error আটকানোর জন্য IPv4 ফোর্স করা হলো
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
