@@ -13,14 +13,14 @@ NexusAdmin is a modern, responsive full-stack admin dashboard built with the MER
 ### 🔐 1. Two-Factor Authentication (2FA via Email OTP)
 Secure login flow integrated with Resend API for real-time OTP verification.
 
-![NexusAdmin 2FA Login Flow](./assets/login.gif)
+![NexusAdmin 2FA Login Flow](./client/src/assets/login.gif)
 
 ---
 
 ### 👥 2. Dynamic User Management (CRUD)
 Seamless user creation, management, sorting, and filtering capabilities with instant UI updates.
 
-![NexusAdmin User Management Flow](./assets/add-user.gif)
+![NexusAdmin User Management Flow](./client/src/assets/add-user.gif)
 
 ---
 
